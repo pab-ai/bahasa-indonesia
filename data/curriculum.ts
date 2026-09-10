@@ -47,7 +47,7 @@ const greetingQuestions:Question[]=greetingRows.map(([time,part],i)=>({id:`greet
 const foodRows=[['telur','egg'],['kopi','coffee'],['teh','tea'],['roti','bread'],['nasi goreng','fried rice'],['yoghurt','yoghurt'],['susu','milk'],['gula','sugar']] as const;
 const foodQuestions:Question[]=foodRows.flatMap(([word,english],i)=>[
  {id:`food-id-${i}`,conceptId:'food_drink',type:'translation',prompt:`What does “${word}” mean?`,choices:[english,'water','rice','restaurant'],answers:[english],explanation:`${word} means ${english}.`,difficulty:1},
- {id:`food-use-${i}`,conceptId:'food_drink',type:'multiple_choice',prompt:`Complete: Saya mau ___ (${english}).`,choices:[word,'sekolah','belajar','tinggal'],answers:[word],explanation:`${word} is the food or drink from the lesson.`,difficulty:1}
+ {id:`food-use-${i}`,conceptId:'food_drink',type:'multiple_choice',context:'Choose the food or drink from this lesson.',prompt:'Complete: Saya mau ___.',choices:[word,'sekolah','belajar','tinggal'],answers:[word],explanation:`${word} means ${english}.`,difficulty:1}
 ]);
 const pronounRows=[
  ['Pablo dan Nora','Mereka','they'],['Nora','Dia','she/he'],['you and your classmates','Kalian','you all'],['the speaker','Saya','I'],
@@ -55,7 +55,7 @@ const pronounRows=[
 ] as const;
 const pronounQuestions:Question[]=pronounRows.map(([subject,answer,meaning],i)=>({id:`pronoun-${i}`,conceptId:'pronouns',type:'multiple_choice',context:`The subject is ${subject}.`,prompt:`Choose the Indonesian pronoun for “${meaning}”.`,choices:['Saya','Kamu','Dia','Mereka','Kalian'],answers:[answer],explanation:`${answer} is the matching personal pronoun.`,difficulty:1}));
 const preferenceRows=[['kopi','want','mau'],['nasi goreng','want','mau'],['jalan-jalan','like','suka'],['Bali','like','suka'],['teh','want','mau'],['belajar bahasa Indonesia','like','suka'],['telur','want','mau'],['makan di restoran','like','suka']] as const;
-const preferenceQuestions:Question[]=preferenceRows.map(([object,english,answer],i)=>({id:`preference-${i}`,conceptId:answer,type:'multiple_choice',prompt:`Saya ___ ${object}. (${english})`,choices:['mau','suka','tinggal','dari'],answers:[answer],explanation:`${answer==='mau'?'Mau expresses a want or intention.':'Suka expresses a preference or something enjoyed.'}`,difficulty:1}));
+const preferenceQuestions:Question[]=preferenceRows.map(([object,english,answer],i)=>({id:`preference-${i}`,conceptId:answer,type:'multiple_choice',context:english==='want'?'Express that you want this.':'Express that you like this.',prompt:`Saya ___ ${object}.`,choices:['mau','suka','tinggal','dari'],answers:[answer],explanation:`${answer==='mau'?'Mau expresses a want or intention.':'Suka expresses a preference or something enjoyed.'}`,difficulty:1}));
 const questionRows=[
  ['Saya dari Jerman.','Kamu dari mana?'],['Saya tinggal di Ubud.','Kamu tinggal di mana?'],['Saya mau kopi.','Kamu mau apa?'],['Itu Nora.','Siapa itu?'],['Saya makan telur.','Kamu makan apa?'],['Mereka di sekolah.','Mereka di mana?']
 ] as const;
