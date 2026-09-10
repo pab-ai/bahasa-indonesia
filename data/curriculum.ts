@@ -13,7 +13,7 @@ export const concepts:Concept[]=[
 {id:'food_drink',title:'Food and drink',description:'Everyday meals and drinks from the lessons.',category:'Vocabulary',difficulty:1,sources:['Notes pp. 1,6,14–15,18,21'],examples:['nasi goreng','telur','kopi','teh','yoghurt'],mastery:64,status:'approved'},
 {id:'ready_invite',title:'Siap and ayo',description:'Say you are ready and invite someone to act.',category:'Phrases',difficulty:1,sources:['Workbook Bab 3 p. 18','Notes pp. 19–20,23'],examples:['Kami siap.','Ayo kita belajar.'],mastery:49,status:'approved'},
 {id:'time_words',title:'Time expressions',description:'Now, later, yesterday, and parts of the day.',category:'Vocabulary',difficulty:1,sources:['Workbook Bab 2–3','Notes pp. 4,22'],examples:['sekarang','nanti','tadi malam','kemarin malam'],mastery:30,status:'review'}];
-export const questions:Question[]=[
+const baseQuestions:Question[]=[
 {id:'g1',conceptId:'greetings_by_time',type:'situation',prompt:'It is 08:00. What greeting fits?',choices:['Selamat pagi','Selamat sore','Selamat malam','Sampai besok'],answers:['Selamat pagi'],explanation:'Pagi is the morning.',difficulty:1},
 {id:'g2',conceptId:'greetings_by_time',type:'multiple_choice',prompt:'You meet your teacher at 16:00.',choices:['Selamat siang, Pak','Selamat sore, Pak','Selamat malam, Pak','Sampai nanti, Pak'],answers:['Selamat sore, Pak'],explanation:'The workbook uses sore for late afternoon.',difficulty:1},
 {id:'k1',conceptId:'kami_vs_kita',type:'multiple_choice',context:'Nora and I are speaking to Pak Pablo. Pak Pablo is not included.',prompt:'___ tinggal di Ubud.',choices:['Kami','Kita','Mereka','Kalian'],answers:['Kami'],explanation:'Kami means “we” excluding the listener.',difficulty:2},
@@ -33,3 +33,44 @@ export const questions:Question[]=[
 {id:'r1',conceptId:'ready_invite',type:'dialogue',context:'Your class is ready to begin.',prompt:'Choose the invitation.',choices:['Ayo kita belajar!','Kami dari belajar.','Selamat belajar malam.','Sampai belajar.'],answers:['Ayo kita belajar'],explanation:'Ayo invites the group to do something together.',difficulty:1},
 {id:'t1',conceptId:'time_words',type:'multiple_choice',prompt:'Which word means “now”?',choices:['sekarang','nanti','kemarin','malam'],answers:['sekarang'],explanation:'Sekarang means now.',difficulty:1},
 {id:'b1',conceptId:'farewells',type:'dialogue',context:'You will see Satria tomorrow.',prompt:'Choose a farewell.',choices:['Sampai besok.','Selamat pagi.','Apa kabar?','Saya baik.'],answers:['Sampai besok'],explanation:'Sampai besok means “see you tomorrow.”',difficulty:1}];
+
+const placeRows=[
+  ['Ubud','di','Saya tinggal'],['Jerman','dari','Saya'],['sekolah','ke','Kami pergi'],['Sanur','di','Ayon tinggal'],
+  ['Australia','dari','Saya'],['restoran','ke','Mereka pergi'],['Cinta Bahasa','di','Kami belajar'],['rumah','ke','Kamu pulang']
+] as const;
+const placeQuestions:Question[]=placeRows.flatMap(([place,answer,stem],i)=>[
+  {id:`place-gap-${i}`,conceptId:'dari_di_ke',type:'multiple_choice',prompt:`${stem} ___ ${place}.`,choices:['di','dari','ke','untuk'],answers:[answer],explanation:`${answer[0].toUpperCase()+answer.slice(1)} is the correct marker for this ${answer==='di'?'location':answer==='dari'?'origin':'movement'}.`,difficulty:answer==='di'?1:2},
+  {id:`place-meaning-${i}`,conceptId:'dari_di_ke',type:'translation',prompt:`What does “${stem} ${answer} ${place}” express?`,choices:[answer==='di'?'Location':answer==='dari'?'Origin':'Movement toward','A preference','A greeting','A time'],answers:[answer==='di'?'Location':answer==='dari'?'Origin':'Movement toward'],explanation:'Choose the spatial relationship expressed by the preposition.',difficulty:2}
+]);
+const greetingRows=[['07:00','pagi'],['10:00','pagi'],['12:30','siang'],['14:00','siang'],['16:30','sore'],['18:00','sore'],['20:00','malam'],['22:00','malam']] as const;
+const greetingQuestions:Question[]=greetingRows.map(([time,part],i)=>({id:`greeting-${i}`,conceptId:'greetings_by_time',type:'situation',prompt:`It is ${time}. Complete: Selamat ___.`,choices:['pagi','siang','sore','malam'],answers:[part],explanation:`The lesson material uses selamat ${part} for this part of the day.`,difficulty:1}));
+const foodRows=[['telur','egg'],['kopi','coffee'],['teh','tea'],['roti','bread'],['nasi goreng','fried rice'],['yoghurt','yoghurt'],['susu','milk'],['gula','sugar']] as const;
+const foodQuestions:Question[]=foodRows.flatMap(([word,english],i)=>[
+ {id:`food-id-${i}`,conceptId:'food_drink',type:'translation',prompt:`What does “${word}” mean?`,choices:[english,'water','rice','restaurant'],answers:[english],explanation:`${word} means ${english}.`,difficulty:1},
+ {id:`food-use-${i}`,conceptId:'food_drink',type:'multiple_choice',prompt:`Complete: Saya mau ___ (${english}).`,choices:[word,'sekolah','belajar','tinggal'],answers:[word],explanation:`${word} is the food or drink from the lesson.`,difficulty:1}
+]);
+const pronounRows=[
+ ['Pablo dan Nora','Mereka','they'],['Nora','Dia','she/he'],['you and your classmates','Kalian','you all'],['the speaker','Saya','I'],
+ ['Pablo dan Ibu Maria','Mereka','they'],['the person spoken to','Kamu','you'],['Ayon','Dia','she/he'],['Pablo speaking about himself','Saya','I']
+] as const;
+const pronounQuestions:Question[]=pronounRows.map(([subject,answer,meaning],i)=>({id:`pronoun-${i}`,conceptId:'pronouns',type:'multiple_choice',context:`The subject is ${subject}.`,prompt:`Choose the Indonesian pronoun for “${meaning}”.`,choices:['Saya','Kamu','Dia','Mereka','Kalian'],answers:[answer],explanation:`${answer} is the matching personal pronoun.`,difficulty:1}));
+const preferenceRows=[['kopi','want','mau'],['nasi goreng','want','mau'],['jalan-jalan','like','suka'],['Bali','like','suka'],['teh','want','mau'],['belajar bahasa Indonesia','like','suka'],['telur','want','mau'],['makan di restoran','like','suka']] as const;
+const preferenceQuestions:Question[]=preferenceRows.map(([object,english,answer],i)=>({id:`preference-${i}`,conceptId:answer,type:'multiple_choice',prompt:`Saya ___ ${object}. (${english})`,choices:['mau','suka','tinggal','dari'],answers:[answer],explanation:`${answer==='mau'?'Mau expresses a want or intention.':'Suka expresses a preference or something enjoyed.'}`,difficulty:1}));
+const questionRows=[
+ ['Saya dari Jerman.','Kamu dari mana?'],['Saya tinggal di Ubud.','Kamu tinggal di mana?'],['Saya mau kopi.','Kamu mau apa?'],['Itu Nora.','Siapa itu?'],['Saya makan telur.','Kamu makan apa?'],['Mereka di sekolah.','Mereka di mana?']
+] as const;
+const questionQuestions:Question[]=questionRows.map(([answerText,answer],i)=>({id:`question-form-${i}`,conceptId:'question_forms',type:'dialogue',context:`B: ${answerText}`,prompt:'Which question makes this answer fit?',choices:[answer,'Apa kabar?','Sampai nanti.','Siapa nama saya?'],answers:[answer],explanation:'The question word must match the information in the answer.',difficulty:2}));
+const phraseQuestions:Question[]=[
+ {id:'intro-2',conceptId:'introductions',type:'dialogue',context:'You meet Pak Ryan for the first time.',prompt:'Choose a natural introduction.',choices:['Kenalkan, saya Pablo.','Sampai besok, Pablo.','Saya di Pablo.','Apa kopi?'],answers:['Kenalkan, saya Pablo'],explanation:'Kenalkan, saya … introduces yourself.',difficulty:1},
+ {id:'intro-3',conceptId:'introductions',type:'dialogue',context:'You introduce Nora to your teacher.',prompt:'Choose the correct phrase.',choices:['Kenalkan, ini Nora.','Nora dari siapa?','Sampai Nora.','Nora mau mana?'],answers:['Kenalkan, ini Nora'],explanation:'Kenalkan, ini … introduces another person.',difficulty:1},
+ {id:'farewell-2',conceptId:'farewells',type:'dialogue',context:'You will meet again later today.',prompt:'What do you say?',choices:['Sampai nanti.','Selamat ulang tahun.','Apa kabar?','Saya baik.'],answers:['Sampai nanti'],explanation:'Sampai nanti means see you later.',difficulty:1},
+ {id:'farewell-3',conceptId:'farewells',type:'translation',prompt:'What does “Hati-hati di jalan” mean?',choices:['Take care on the road.','Good morning.','Where are you from?','I like walking.'],answers:['Take care on the road'],explanation:'It is a practical farewell wishing someone safety.',difficulty:1},
+ {id:'ready-2',conceptId:'ready_invite',type:'dialogue',context:'Teacher: Pak Pablo siap belajar?',prompt:'Answer that you are ready.',choices:['Ya, saya siap.','Saya dari siap.','Sampai siap.','Siap di mana?'],answers:['Ya, saya siap'],explanation:'Siap means ready.',difficulty:1},
+ {id:'ready-3',conceptId:'ready_invite',type:'dialogue',context:'Invite your classmates to go to Uluwatu.',prompt:'Choose the invitation.',choices:['Ayo pergi ke Uluwatu!','Kami dari Uluwatu.','Selamat Uluwatu.','Uluwatu siapa?'],answers:['Ayo pergi ke Uluwatu'],explanation:'Ayo introduces an invitation.',difficulty:1},
+ {id:'untuk-2',conceptId:'untuk',type:'multiple_choice',prompt:'Saya pergi ke Cinta Bahasa ___ belajar bahasa Indonesia.',choices:['untuk','dari','atau','siapa'],answers:['untuk'],explanation:'Untuk introduces the purpose of going.',difficulty:2},
+ {id:'untuk-3',conceptId:'untuk',type:'multiple_choice',prompt:'Saya pergi ke restoran ___ makan.',choices:['untuk','di','dari','kalian'],answers:['untuk'],explanation:'Untuk means in order to / for.',difficulty:2},
+ {id:'kami-3',conceptId:'kami_vs_kita',type:'multiple_choice',context:'A teacher speaks to all students, including everyone listening.',prompt:'Ayo ___ belajar sekarang.',choices:['kita','kami','mereka','dia'],answers:['kita'],explanation:'Kita includes the listeners.',difficulty:2},
+ {id:'kami-4',conceptId:'kami_vs_kita',type:'multiple_choice',context:'Pablo and Nora speak to their teacher about their own breakfast; the teacher was not there.',prompt:'___ makan pagi bersama.',choices:['Kami','Kita','Kalian','Dia'],answers:['Kami'],explanation:'Kami excludes the person being spoken to.',difficulty:2}
+];
+
+export const questions:Question[]=[...baseQuestions,...placeQuestions,...greetingQuestions,...foodQuestions,...pronounQuestions,...preferenceQuestions,...questionQuestions,...phraseQuestions];
