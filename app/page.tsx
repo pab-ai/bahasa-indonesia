@@ -18,6 +18,7 @@ import {
   gradeAnswer,
   scoreAttempt,
   selectAdaptiveQuestions,
+  shuffleQuestionChoices,
   updateMastery,
 } from "@/lib/learning";
 type Tab = "home" | "know" | "materials" | "progress";
@@ -38,29 +39,46 @@ export default function App() {
   const [xp, setXp] = useState(240);
   const [streak, setStreak] = useState(0);
   const [started, setStarted] = useState(0);
+  const [name, setName] = useState("");
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     const raw = localStorage.getItem("lancar-state");
     if (raw) {
       try {
         const s = JSON.parse(raw);
         setAttempts(s.attempts || []);
-        setCs(s.concepts || seedConcepts);
+        const savedConcepts: Concept[] = s.concepts || [];
+        const mergedSeeds = seedConcepts.map((seed) => {
+          const saved = savedConcepts.find((concept) => concept.id === seed.id);
+          return saved ? { ...seed, mastery: saved.mastery } : seed;
+        });
+        const manualConcepts = savedConcepts.filter(
+          (saved) => !seedConcepts.some((seed) => seed.id === saved.id),
+        );
+        setCs([...mergedSeeds, ...manualConcepts]);
         setXp(s.xp || 240);
       } catch {}
     }
+    setName(localStorage.getItem("lancar-name") || "");
+    setHydrated(true);
   }, []);
   useEffect(() => {
+    if (!hydrated) return;
     localStorage.setItem(
       "lancar-state",
       JSON.stringify({ attempts, concepts: cs, xp }),
     );
-  }, [attempts, cs, xp]);
+  }, [attempts, cs, xp, hydrated]);
   const approved = cs.filter((c) => c.status === "approved");
   const mastery = Math.round(
     approved.reduce((n, c) => n + c.mastery, 0) / approved.length,
   );
   function begin() {
-    setQuiz(selectAdaptiveQuestions(questions, approved, attempts, 20));
+    setQuiz(
+      selectAdaptiveQuestions(questions, approved, attempts, 20).map((q) =>
+        shuffleQuestionChoices(q),
+      ),
+    );
     setIndex(0);
     setSelected("");
     setResult(null);
@@ -69,7 +87,7 @@ export default function App() {
   }
   function answer(choice: string) {
     if (result !== null) return;
-    const q = quiz![index];
+    const q = personalizeQuestion(quiz![index], name);
     const ok = gradeAnswer(choice, q.answers);
     const priorWrong = attempts
       .slice(-20)
@@ -102,25 +120,41 @@ export default function App() {
   function next() {
     if (index + 1 >= quiz!.length) {
       const more = selectAdaptiveQuestions(questions, approved, attempts, 20);
-      setQuiz((current) => [...(current || []), ...more]);
+      setQuiz((current) => [
+        ...(current || []),
+        ...more.map((q) => shuffleQuestionChoices(q)),
+      ]);
     }
     setIndex((i) => i + 1);
     setSelected("");
     setResult(null);
     setStarted(Date.now());
   }
+  if (!hydrated) return <main className="grain min-h-screen" />;
+  if (!name) {
+    return (
+      <NameGate
+        onSave={(value) => {
+          localStorage.setItem("lancar-name", value);
+          setName(value);
+        }}
+      />
+    );
+  }
   if (quiz) {
     const q = quiz[index];
     const c = cs.find((c) => c.id === q.conceptId)!;
+    const namedQuestion = personalizeQuestion(q, name);
     return (
       <Quiz
-        q={q}
+        q={namedQuestion}
         concept={c}
         index={index}
         selected={selected}
         result={result}
         streak={streak}
         onAnswer={answer}
+        onDraft={setSelected}
         onNext={next}
         onClose={() => setQuiz(null)}
       />
@@ -134,6 +168,7 @@ export default function App() {
             mastery={mastery}
             xp={xp}
             concepts={approved}
+            name={name}
             onStart={begin}
             onTab={setTab}
           />
@@ -159,16 +194,64 @@ export default function App() {
     </main>
   );
 }
+function personalizeQuestion(q: Question, name: string): Question {
+  const replace = (value: string) => value.replaceAll("Pablo", name);
+  return {
+    ...q,
+    prompt: replace(q.prompt),
+    context: q.context ? replace(q.context) : undefined,
+    choices: q.choices.map(replace),
+    answers: q.answers.map(replace),
+    explanation: replace(q.explanation),
+  };
+}
+function greetingNow() {
+  const hour = new Date().getHours();
+  if (hour < 11) return "Selamat pagi";
+  if (hour < 15) return "Selamat siang";
+  if (hour < 19) return "Selamat sore";
+  return "Selamat malam";
+}
+function dateNow() {
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  })
+    .format(new Date())
+    .toLocaleUpperCase("id-ID");
+}
+function NameGate({ onSave }: { onSave: (name: string) => void }) {
+  const [value, setValue] = useState("");
+  const submit = () => {
+    const clean = value.trim().slice(0, 30);
+    if (clean) onSave(clean);
+  };
+  return (
+    <main className="grain grid min-h-screen place-items-center px-5">
+      <section className="card bali-border w-full max-w-sm rounded-[2rem] p-7 pt-9">
+        <div className="sun-disc grid h-14 w-14 place-items-center rounded-full text-xl">ᬓ</div>
+        <p className="mt-6 text-xs font-black tracking-[.2em] text-coral">SELAMAT DATANG</p>
+        <h1 className="mt-2 text-3xl font-black">Siapa nama kamu?</h1>
+        <p className="mt-2 text-sm text-ink/55">We’ll use your name to make practice feel personal.</p>
+        <input autoFocus value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="Type your name" className="mt-6 w-full rounded-2xl border-2 border-ink/10 bg-white px-4 py-4 text-lg font-bold outline-none focus:border-teal" />
+        <button type="button" onClick={submit} disabled={!value.trim()} className="mt-3 w-full touch-manipulation rounded-2xl bg-indigo py-4 font-black text-white disabled:opacity-35">MULAI BELAJAR</button>
+      </section>
+    </main>
+  );
+}
 function HomeView({
   mastery,
   xp,
   concepts,
+  name,
   onStart,
   onTab,
 }: {
   mastery: number;
   xp: number;
   concepts: Concept[];
+  name: string;
   onStart: () => void;
   onTab: (t: Tab) => void;
 }) {
@@ -190,11 +273,9 @@ function HomeView({
               </p>
             </div>
           </div>
-          <p className="text-xs font-extrabold text-teal">
-            KAMIS, 10 SEPTEMBER
-          </p>
+          <p className="text-xs font-extrabold text-teal">{dateNow()}</p>
           <h1 className="mt-1 text-3xl font-black tracking-tight">
-            Selamat siang, Pablo.
+            {greetingNow()}, {name}.
           </h1>
         </div>
         <div className="flex items-center gap-1 rounded-full bg-white/80 px-3 py-2 text-sm font-black shadow-sm">
@@ -216,8 +297,9 @@ function HomeView({
           Latihan adaptif tanpa batas · berhenti kapan saja
         </p>
         <button
+          type="button"
           onClick={onStart}
-          className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-lime py-4 text-lg font-black text-ink shadow-[0_6px_0_#bd8f31] active:translate-y-1 active:shadow-none"
+          className="mt-7 flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-lime py-4 text-lg font-black text-ink shadow-[0_6px_0_#bd8f31] active:translate-y-1 active:shadow-none"
         >
           <Sparkles size={21} />
           MULAI KUIS
@@ -295,6 +377,7 @@ function Quiz({
   result,
   streak,
   onAnswer,
+  onDraft,
   onNext,
   onClose,
 }: {
@@ -305,6 +388,7 @@ function Quiz({
   result: boolean | null;
   streak: number;
   onAnswer: (s: string) => void;
+  onDraft: (s: string) => void;
   onNext: () => void;
   onClose: () => void;
 }) {
@@ -338,6 +422,32 @@ function Quiz({
             </p>
           )}
           <h1 className="text-3xl font-black leading-tight">{q.prompt}</h1>
+          {q.type === "fill_blank" ? (
+            <div className="mt-8 space-y-3">
+              <input
+                autoFocus
+                value={selected}
+                disabled={result !== null}
+                onChange={(e) => onDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && selected.trim() && result === null)
+                    onAnswer(selected);
+                }}
+                autoCapitalize="none"
+                autoCorrect="off"
+                placeholder="Type your answer in Indonesian"
+                className="w-full rounded-2xl border-2 border-ink/10 bg-white p-4 text-lg font-extrabold outline-none focus:border-teal"
+              />
+              <button
+                type="button"
+                disabled={!selected.trim() || result !== null}
+                onClick={() => onAnswer(selected)}
+                className="w-full touch-manipulation rounded-2xl bg-indigo py-4 font-black text-white disabled:opacity-35"
+              >
+                CHECK ANSWER
+              </button>
+            </div>
+          ) : (
           <div className="mt-8 space-y-3">
             {q.choices.map((choice, i) => {
               const chosen = selected === choice;
@@ -356,6 +466,7 @@ function Quiz({
               );
             })}
           </div>
+          )}
         </section>
         {result !== null && (
           <aside
@@ -442,7 +553,7 @@ function Results({
   );
 }
 function Know({ concepts }: { concepts: Concept[] }) {
-  const groups = ["Grammar", "Vocabulary", "Conversation", "Phrases"];
+  const groups = ["Grammar", "Vocabulary", "Conversation", "Phrases", "Numbers"];
   return (
     <>
       <p className="text-xs font-black tracking-widest text-teal">CURRICULUM</p>
@@ -590,6 +701,11 @@ function Materials({
       )}
       <div className="mt-7 space-y-3">
         <Material
+          title="Lesson notes · 11 Sep 2026"
+          meta="8 pages · 5 concepts added or reinforced"
+          tone="bg-lime/30"
+        />
+        <Material
           title="Handwritten lesson notes"
           meta="23 pages · 13 concept groups"
           tone="bg-coral/10"
@@ -646,7 +762,7 @@ function Progress({
     : 0;
   const cats = useMemo(
     () =>
-      ["Grammar", "Vocabulary", "Conversation", "Phrases"].map((name) => ({
+      ["Grammar", "Vocabulary", "Conversation", "Phrases", "Numbers"].map((name) => ({
         name,
         value: Math.round(
           concepts
