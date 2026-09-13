@@ -15,7 +15,11 @@ import {
 } from "lucide-react";
 import { concepts as seedConcepts, questions } from "@/data/curriculum";
 import type { Attempt, Concept, Question } from "@/lib/types";
-import { questionSpeechText, speakIndonesian } from "@/lib/speech";
+import {
+  isIndonesianText,
+  questionSpeechText,
+  speakIndonesian,
+} from "@/lib/speech";
 import {
   gradeAnswer,
   scoreAttempt,
@@ -394,6 +398,8 @@ function Quiz({
   onNext: () => void;
   onClose: () => void;
 }) {
+  const questionAudio = questionSpeechText(q);
+  const answerAudio = isIndonesianText(q.answers[0]) ? q.answers[0] : "";
   return (
     <main className="grain min-h-screen">
       <div className="safe mx-auto flex min-h-screen max-w-md flex-col px-5 py-6">
@@ -425,15 +431,17 @@ function Quiz({
           )}
           <div className="flex items-start gap-3">
             <h1 className="min-w-0 flex-1 text-3xl font-black leading-tight">{q.prompt}</h1>
-            <button
-              type="button"
-              onClick={() => speakIndonesian(questionSpeechText(q))}
-              aria-label="Hear question in Indonesian"
-              title="Dengarkan pertanyaan"
-              className="grid h-12 w-12 shrink-0 touch-manipulation place-items-center rounded-full bg-lime text-ink shadow-sm active:scale-95"
-            >
-              <Volume2 size={23} />
-            </button>
+            {questionAudio && (
+              <button
+                type="button"
+                onClick={() => speakIndonesian(questionAudio)}
+                aria-label="Hear question in Indonesian"
+                title="Dengarkan pertanyaan"
+                className="grid h-12 w-12 shrink-0 touch-manipulation place-items-center rounded-full bg-lime text-ink shadow-sm active:scale-95"
+              >
+                <Volume2 size={23} />
+              </button>
+            )}
           </div>
           {q.type === "fill_blank" ? (
             <div className="mt-8 space-y-3">
@@ -492,15 +500,17 @@ function Quiz({
               <p className="min-w-0 flex-1 font-black">
                 {result ? "Answer" : "Correct answer"}: {q.answers[0]}
               </p>
-              <button
-                type="button"
-                onClick={() => speakIndonesian(q.answers[0])}
-                aria-label="Hear the correct answer in Indonesian"
-                title="Dengarkan jawaban"
-                className={`grid h-11 w-11 shrink-0 touch-manipulation place-items-center rounded-full ${result ? "bg-white text-teal" : "bg-coral text-white"}`}
-              >
-                <Volume2 size={21} />
-              </button>
+              {answerAudio && (
+                <button
+                  type="button"
+                  onClick={() => speakIndonesian(answerAudio)}
+                  aria-label="Hear the correct answer in Indonesian"
+                  title="Dengarkan jawaban"
+                  className={`grid h-11 w-11 shrink-0 touch-manipulation place-items-center rounded-full ${result ? "bg-white text-teal" : "bg-coral text-white"}`}
+                >
+                  <Volume2 size={21} />
+                </button>
+              )}
             </div>
             <p
               className={`mt-2 text-sm font-semibold ${result ? "text-white/75" : "text-ink/65"}`}
