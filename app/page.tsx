@@ -7,9 +7,13 @@ import {
   Flame,
   Home,
   Plus,
+  Hash,
+  Languages,
+  MessageCircle,
   Sparkles,
   Target,
   Trophy,
+  Users,
   Volume2,
   X,
 } from "lucide-react";
@@ -46,6 +50,9 @@ export default function App() {
   const [streak, setStreak] = useState(0);
   const [started, setStarted] = useState(0);
   const [name, setName] = useState("");
+  const [practiceConceptIds, setPracticeConceptIds] = useState<string[] | null>(
+    null,
+  );
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     const raw = localStorage.getItem("lancar-state");
@@ -79,9 +86,13 @@ export default function App() {
   const mastery = Math.round(
     approved.reduce((n, c) => n + c.mastery, 0) / approved.length,
   );
-  function begin() {
+  function begin(conceptIds?: string[]) {
+    const pool = conceptIds?.length
+      ? approved.filter((concept) => conceptIds.includes(concept.id))
+      : approved;
+    setPracticeConceptIds(conceptIds || null);
     setQuiz(
-      selectAdaptiveQuestions(questions, approved, attempts, 20).map((q) =>
+      selectAdaptiveQuestions(questions, pool, attempts, 20).map((q) =>
         shuffleQuestionChoices(q),
       ),
     );
@@ -125,7 +136,12 @@ export default function App() {
   }
   function next() {
     if (index + 1 >= quiz!.length) {
-      const more = selectAdaptiveQuestions(questions, approved, attempts, 20);
+      const pool = practiceConceptIds
+        ? approved.filter((concept) =>
+            practiceConceptIds.includes(concept.id),
+          )
+        : approved;
+      const more = selectAdaptiveQuestions(questions, pool, attempts, 20);
       setQuiz((current) => [
         ...(current || []),
         ...more.map((q) => shuffleQuestionChoices(q)),
@@ -258,10 +274,53 @@ function HomeView({
   xp: number;
   concepts: Concept[];
   name: string;
-  onStart: () => void;
+  onStart: (conceptIds?: string[]) => void;
   onTab: (t: Tab) => void;
 }) {
   const weak = [...concepts].sort((a, b) => a.mastery - b.mastery).slice(0, 3);
+  const practiceGroups = [
+    {
+      title: "Kata kerja",
+      subtitle: "Verbs & actions",
+      icon: Languages,
+      ids: ["mau", "suka", "activity_verbs"],
+      tone: "bg-coral/15 text-coral",
+    },
+    {
+      title: "Angka",
+      subtitle: "Numbers",
+      icon: Hash,
+      ids: ["number_spelling"],
+      tone: "bg-lime/35 text-ink",
+    },
+    {
+      title: "Kata ganti",
+      subtitle: "I, you, we, they",
+      icon: Users,
+      ids: ["pronouns", "kami_vs_kita"],
+      tone: "bg-teal/15 text-teal",
+    },
+    {
+      title: "Percakapan",
+      subtitle: "Conversation",
+      icon: MessageCircle,
+      ids: [
+        "greetings_by_time",
+        "farewells",
+        "introductions",
+        "question_forms",
+        "availability_requests",
+      ],
+      tone: "bg-indigo/10 text-indigo",
+    },
+    {
+      title: "Keluarga & orang",
+      subtitle: "Family & people",
+      icon: Users,
+      ids: ["family_people", "jobs_roles", "pronouns"],
+      tone: "bg-sand text-ink",
+    },
+  ];
   return (
     <>
       <header className="flex items-start justify-between">
@@ -304,7 +363,7 @@ function HomeView({
         </p>
         <button
           type="button"
-          onClick={onStart}
+          onClick={() => onStart()}
           className="mt-7 flex w-full touch-manipulation items-center justify-center gap-2 rounded-2xl bg-lime py-4 text-lg font-black text-ink shadow-[0_6px_0_#bd8f31] active:translate-y-1 active:shadow-none"
         >
           <Sparkles size={21} />
@@ -314,6 +373,31 @@ function HomeView({
       <section className="mt-7 grid grid-cols-2 gap-3">
         <Stat label="Penguasaan" value={`${mastery}%`} icon={<Target />} />
         <Stat label="Total XP" value={xp.toLocaleString()} icon={<Trophy />} />
+      </section>
+      <section className="mt-8">
+        <p className="text-xs font-black tracking-widest text-coral">
+          PILIH LATIHAN
+        </p>
+        <h2 className="mt-1 text-xl font-black">Latihan berdasarkan topik</h2>
+        <p className="mt-1 text-sm text-ink/50">
+          Focus on one area while questions stay varied.
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          {practiceGroups.map(({ title, subtitle, icon: Icon, ids, tone }) => (
+            <button
+              key={title}
+              type="button"
+              onClick={() => onStart(ids)}
+              className="card touch-manipulation rounded-2xl p-4 text-left active:scale-[.98]"
+            >
+              <div className={`grid h-10 w-10 place-items-center rounded-xl ${tone}`}>
+                <Icon size={20} />
+              </div>
+              <p className="mt-3 font-black">{title}</p>
+              <p className="text-xs font-semibold text-ink/45">{subtitle}</p>
+            </button>
+          ))}
+        </div>
       </section>
       <section className="mt-8">
         <div className="flex items-end justify-between">
@@ -734,6 +818,11 @@ function Materials({
         </section>
       )}
       <div className="mt-7 space-y-3">
+        <Material
+          title="Lesson · 15 Sep 2026"
+          meta="15 pages · family, work, time markers & activities"
+          tone="bg-indigo/10"
+        />
         <Material
           title="Lesson notes · 11 Sep 2026"
           meta="8 pages · 5 concepts added or reinforced"
