@@ -297,7 +297,12 @@ function HomeView({
       title: "Kata ganti",
       subtitle: "I, you, we, they",
       icon: Users,
-      ids: ["pronouns", "kami_vs_kita"],
+      ids: [
+        "pronouns",
+        "kami_vs_kita",
+        "formal_informal_pronouns",
+        "possessive_word_order",
+      ],
       tone: "bg-teal/15 text-teal",
     },
     {
@@ -310,6 +315,7 @@ function HomeView({
         "introductions",
         "question_forms",
         "availability_requests",
+        "atau_choices",
       ],
       tone: "bg-indigo/10 text-indigo",
     },
@@ -818,6 +824,11 @@ function Materials({
         </section>
       )}
       <div className="mt-7 space-y-3">
+        <Material
+          title="Ongoing notes · 16 Sep 2026"
+          meta="9 content pages · 5 new concepts & 7 reinforced"
+          tone="bg-lime/30"
+        />
         <Material
           title="Lesson · 15 Sep 2026"
           meta="15 pages · family, work, time markers & activities"
